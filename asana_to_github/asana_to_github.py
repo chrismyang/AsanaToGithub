@@ -9,6 +9,7 @@ def parse() :
     parser = OptionParser("usage: %prog [options] Asana-API-Key Github-username Github-password")
     parser.add_option("-w", "--workspace", dest="workspace", help="WORKSPACE name which has the project you want to copy to Github. If none is specified a list of available workspaces is printed.")
     parser.add_option("-p", "--project", dest="project", help="PROJECT name which has the items you want to copy to Github. If none is specified a list of available projects is printed.")
+    parser.add_option("-o", "--organization", dest="organization", help="ORGANIZATION name which owns the repository to be migrated to.  If non is specified the given GitHub user is assumed to own the repo.")
     parser.add_option("-r", "--repo", dest="repo", help="Github REPOsitory name to whose issue tracker you want to copy Asana tasks. If none is specified a list of available repositories is printed.")
     parser.add_option("-i", "--interactive", action="store_true", dest="interactive", default=False, help="request confirmation before attempting to copy each task to Github")
     parser.add_option("--copy-completed-tasks", action="store_true", dest="copy_completed", default=False, help="completed Asana tasks are not copied. Use this switch to force copy of completed tasks.")
@@ -126,18 +127,24 @@ def print_repos(github_api_object) :
     for item in my_repos :
         print item.full_name
 
-def get_repo(github_api_object, repo_full_name) :
+def get_repo(github_api_object, repo_full_name, organization):
     """Return an instance of repo
     
     :Parameters:
         - `github_api_object`: an instance of Github
         - `repo_full_name`: full name of the repo on Github, for example, talha131/try
+        - `organization`: possible name of the owner of the given repo.  If None, then assumes the given user is the
+        owner
     """
 
-    my_repos = github_api_object.get_user().get_repos()
+    if organization:
+        repos = github_api_object.get_organization(organization).get_repos()
+    else:
+        repos = github_api_object.get_user().get_repos()
+
     my_repo = None
-    for item in my_repos :
-        if item.full_name == repo_full_name :
+    for item in repos:
+        if item.full_name == repo_full_name:
             my_repo = item
             break
     return my_repo
@@ -154,7 +161,7 @@ def get_repo_from_github(github_api_object, options) :
     if not options.repo :
         print_repos(github_api_object)
     else :
-        my_repo = get_repo(github_api_object, options.repo)
+        my_repo = get_repo(github_api_object, options.repo, options.organization)
         if not my_repo :
             print "Repository not found. Make sure you have entered complete repository name correctly."
         else :
