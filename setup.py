@@ -2,8 +2,8 @@ from setuptools import setup, find_packages
 from asana_to_github import __version__ as version
 
 install_requires = [
-        'PyGithub==1.9.1',
-        'asana==0.0.1',
+        'PyGithub==1.25.2',
+        'asana>=0.1.5',
         'python-dateutil==1.5',
         ]
 

@@ -1,4 +1,4 @@
-from asana import asana
+import asana
 from optparse import OptionParser
 from github import Github
 import dateutil.parser
@@ -26,9 +26,9 @@ def print_workspaces(asana_api_object) :
         - `asana_api_object`: an instance of Asana
     """
 
-    my_spaces = asana_api_object.list_workspaces()
+    my_spaces = asana_api_object.workspaces.find_all()
     print "Following Asana workspaces are available:"
-    for item in my_spaces :
+    for item in my_spaces:
         print item['name']
 
 def get_workspace_id(asana_api_object, workspace) :
@@ -39,7 +39,7 @@ def get_workspace_id(asana_api_object, workspace) :
         - `workspace`: name or id of the workspace
     """
 
-    my_spaces = asana_api_object.list_workspaces()
+    my_spaces = asana_api_object.workspaces.find_all()
     w_id = None
     for item in my_spaces :
         if item['name'].encode("utf-8") == workspace or item['id'] == workspace :
@@ -55,7 +55,7 @@ def print_projects(asana_api_object, workspace_id) :
         - `workspace_id`: id of the workspace whose projects are to be listed
     """
 
-    my_projects = asana_api_object.list_projects(workspace_id)
+    my_projects = asana_api_object.projects.find_by_workspace(workspace_id)
     print "Following projects are available in it:"
     for item in my_projects :
         print item['name']
@@ -69,7 +69,7 @@ def get_project_id(asana_api_object, workspace_id, project) :
         - `project`: name of id of the project
     """
 
-    my_projects = asana_api_object.list_projects(workspace_id)
+    my_projects = asana_api_object.projects.find_by_workspace(workspace_id)
     p_id = None
     for item in my_projects :
         if item['name'].encode("utf-8") == project or item['id'] == project :
@@ -85,7 +85,7 @@ def get_tasks(asana_api_object, project_id) :
         - `project_id`: id of the project whose tasks are to be fetched
     """
 
-    return asana_api_object.get_project_tasks(project_id)
+    return list(asana_api_object.tasks.find_by_project(project_id))
 
 def get_project_id_from_asana(asana_api_object, options) :
     """Returns project id and handle cases when workspace or project is not specified at command line
@@ -134,7 +134,7 @@ def get_repo(github_api_object, repo_full_name) :
         - `repo_full_name`: full name of the repo on Github, for example, talha131/try
     """
 
-    my_repos = github_api_object.get_user().get_repos() 
+    my_repos = github_api_object.get_user().get_repos()
     my_repo = None
     for item in my_repos :
         if item.full_name == repo_full_name :
@@ -229,7 +229,7 @@ def add_story_to_assana(asana_api_object, task_id, text) :
         - `text`: story
     """
 
-    asana_api_object.add_story(task_id, text)
+    asana_api_object.stories.create_on_task(task_id, {'text': text})
 
 def copy_stories_to_github(asana_api_object, task_id, issue) :
     """Copy task story from Asana to Github
@@ -242,7 +242,7 @@ def copy_stories_to_github(asana_api_object, task_id, issue) :
 
     comment = ""
     attachment = ""
-    all_stories = asana_api_object.list_stories(task_id)
+    all_stories = asana_api_object.stories.find_by_task(task_id)
     for astory in all_stories :
         if astory['type'] == "comment" :
             the_time = dateutil.parser.parse(astory['created_at'])
@@ -321,7 +321,7 @@ def migrate_asana_to_github(asana_api_object, project_id, git_repo, options) :
         return
 
     for a_task in all_tasks :
-        task = asana_api_object.get_task(a_task['id'])
+        task = asana_api_object.tasks.find_by_id(a_task['id'])
         """Filter completed and incomplete tasks. Copy if task is incomplete or even completed tasks are to be copied"""
         if not task['completed'] or options.copy_completed :
             if options.interactive :
@@ -346,7 +346,7 @@ def main() :
             parser.error("Github password is required")
         exit(1)
 
-    asana_api = asana.AsanaAPI(args[0], debug=False)  
+    asana_api = asana.Client.basic_auth(args[0])
     project_id = get_project_id_from_asana(asana_api, options)
     if not project_id :
         exit(1)
