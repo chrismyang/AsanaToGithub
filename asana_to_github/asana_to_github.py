@@ -295,6 +295,14 @@ def copy_task_to_github(asana_api_object, task, task_id, git_repo, options) :
     if task['due_on'] :
         meta = meta + " It is due on {}.".format(dateutil.parser.parse(task['due_on']).strftime("%b-%d-%Y"))
     body = task['notes'].encode("utf-8") + "\n" + meta
+
+    for tag in task['tags']:
+        label = get_label(git_repo, tag['name'])
+        if not label:
+            label = git_repo.create_label(tag['name'], "FFFFFF")
+
+        labels.append(label)
+
     new_issue = git_repo.create_issue(task['name'], body, labels = labels)
 
     """Add stories to Github"""
