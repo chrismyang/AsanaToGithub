@@ -216,16 +216,16 @@ def apply_tag_at_asana(asana_api_object, tag_title, workspace_id, task_id) :
     """
 
     tag_id = None
-    all_tags = asana_api_object.get_tags(workspace_id)
+    all_tags = asana_api_object.tags.find_by_workspace(workspace_id)
     for atag in all_tags :
         if atag['name'] == tag_title :
             tag_id = atag['id']
             break
     if not tag_id :
-        new_tag = asana_api_object.create_tag(tag_title, workspace_id)
+        new_tag = asana_api_object.tags.create_in_workspace(workspace_id, {'name': tag_title})
         tag_id = new_tag['id']
 
-    asana_api_object.add_tag_task(task_id, tag_id)
+    asana_api_object.tasks.add_tag(task_id, {"tag": tag_id})
 
 def add_story_to_assana(asana_api_object, task_id, text) :
     """Adds a new story to the task
