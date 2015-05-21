@@ -12,6 +12,7 @@ def parse() :
     parser.add_option("-o", "--organization", dest="organization", help="ORGANIZATION name which owns the repository to be migrated to.  If non is specified the given GitHub user is assumed to own the repo.")
     parser.add_option("-r", "--repo", dest="repo", help="Github REPOsitory name to whose issue tracker you want to copy Asana tasks. If none is specified a list of available repositories is printed.")
     parser.add_option("-i", "--interactive", action="store_true", dest="interactive", default=False, help="request confirmation before attempting to copy each task to Github")
+    parser.add_option("--skip-copied-tasks", action="store_true", dest="skip_copied", default=False, help="Skip Asana tasks that have the 'copied-to-github' task")
     parser.add_option("--copy-completed-tasks", action="store_true", dest="copy_completed", default=False, help="completed Asana tasks are not copied. Use this switch to force copy of completed tasks.")
     parser.add_option("--dont-apply-tag", action="store_true", dest="dont_apply_tag", default=False, help="every task copied to Github gets a tag copied-to-github at Asana. Use this switch to disable it.")
     parser.add_option("--dont-apply-label", action="store_true", dest="dont_apply_label", default=False, help="every issue copied to Github gets a label copied-from-asana at Github. Use this switch to disable it.")
@@ -334,7 +335,10 @@ def migrate_asana_to_github(asana_api_object, project_id, git_repo, options) :
             if options.interactive :
                 should_copy = ask_user_permission(task, a_task['id']) 
             else :
-                should_copy = True
+                if options.skip_copied and 'copied to github' in map(lambda x: x['name'], task['tags']):
+                    should_copy = False
+                else:
+                    should_copy = True
             if should_copy :
                 copy_task_to_github(asana_api_object, task, a_task['id'], git_repo, options) 
             else :
