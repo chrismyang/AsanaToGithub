@@ -302,8 +302,8 @@ def copy_task_to_github(asana_api_object, task, task_id, git_repo, options) :
             label = git_repo.create_label(tag['name'], "FFFFFF")
 
         labels.append(label)
-
-    new_issue = git_repo.create_issue(task['name'], body, labels = labels)
+    
+    new_issue = git_repo.create_issue(task['name'] or '(unnamed task)', body, labels = labels)
 
     """Add stories to Github"""
     if not options.dont_copy_stories :
